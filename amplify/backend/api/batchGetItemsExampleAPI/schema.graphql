@@ -1,0 +1,22 @@
+type Todo @model {
+  id: ID!
+  name: String!
+  description: String
+  priority: String
+}
+
+type Note @model {
+  id: ID!
+  name: String!
+}
+
+# no model annotation here
+type TodoNoteResponse {
+  todos: [Todo]
+  notes: [Note]
+}
+
+type Query {
+  batchFetchTodo(ids: [ID]): [Todo]
+  batchFetchTodoWithNotes(todoIds: [ID], notesIds: [ID]): TodoNoteResponse
+}

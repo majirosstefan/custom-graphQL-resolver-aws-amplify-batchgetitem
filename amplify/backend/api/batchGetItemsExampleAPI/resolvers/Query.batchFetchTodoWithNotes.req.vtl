@@ -1,0 +1,39 @@
+
+## https://docs.aws.amazon.com/appsync/latest/devguide/tutorial-dynamodb-batch.html
+## Merge locationReadings and temperatureReadings
+## into a single list
+## TODO __typename needed as schema uses an interface
+## TODO $ctx.result.data.unprocessedKeys.
+
+#if ($ctx.error)        
+    $util.appendError($util.toJson($ctx.error))
+#end
+
+#set($todoIds = [])
+#foreach($id in ${ctx.args.todoIds})
+    #set($map = {})
+    $util.qr($map.put("id", $util.dynamodb.toString($id)))
+    $util.qr($todoIds.add($map))
+#end
+
+#set($notesIds = [])
+#foreach($id in ${ctx.args.notesIds})
+    #set($map = {})
+    $util.qr($map.put("id", $util.dynamodb.toString($id)))
+    $util.qr($notesIds.add($map))
+#end
+
+{
+    "version" : "2018-05-29",
+    "operation" : "BatchGetItem",
+    "tables" : {
+        "Todo-${ctx.stash.apiId}-${ctx.stash.env}": {
+            "keys": $util.toJson($todoIds),
+            "consistentRead": true
+        },
+        "Note-${ctx.stash.apiId}-${ctx.stash.env}": {
+            "keys": $util.toJson($notesIds),
+            "consistentRead": true
+        }
+    }
+}

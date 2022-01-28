@@ -1,0 +1,348 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "An auto-generated nested stack.",
+  "Metadata": {},
+  "Parameters": {
+    "AppSyncApiId": {
+      "Type": "String",
+      "Description": "The id of the AppSync API associated with this project."
+    },
+    "AppSyncApiName": {
+      "Type": "String",
+      "Description": "The name of the AppSync API",
+      "Default": "AppSyncSimpleTransform"
+    },
+    "env": {
+      "Type": "String",
+      "Description": "The environment name. e.g. Dev, Test, or Production",
+      "Default": "NONE"
+    },
+    "S3DeploymentBucket": {
+      "Type": "String",
+      "Description": "The S3 bucket containing all deployment assets for the project."
+    },
+    "S3DeploymentRootKey": {
+      "Type": "String",
+      "Description": "An S3 key relative to the S3DeploymentBucket that points to the root\nof the deployment directory."
+    }
+  },
+  "Resources": {
+    "EmptyResource": {
+      "Type": "Custom::EmptyResource",
+      "Condition": "AlwaysFalse"
+    },
+    "NONEE": {
+      "Type": "AWS::AppSync::DataSource",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Name": "NONEE",
+        "Type": "NONE"
+      }
+    },
+    "AddEnvVariablesToStash": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "NONEE",
+        "Description": "Sets $ctx.stash.env to the Amplify environment and $ctx.stash.apiId to the Amplify API ID",
+        "FunctionVersion": "2018-05-29",
+        "Name": "AddEnvVariablesToStash",
+        "RequestMappingTemplate": "{\n          \"version\": \"2017-02-28\",\n          \"payload\": {}\n        }",
+        "ResponseMappingTemplate": {
+          "Fn::Join": [
+            "",
+            [
+              "$util.qr($ctx.stash.put(\"env\", \"",
+              {
+                "Ref": "env"
+              },
+              "\"))\n$util.qr($ctx.stash.put(\"apiId\", \"",
+              {
+                "Ref": "AppSyncApiId"
+              },
+              "\"))\n$util.toJson($ctx.prev.result)"
+            ]
+          ]
+        }
+      },
+      "DependsOn": [
+        "NONEE"
+      ]
+    },
+    "FunctionQueryBatchFetchTodo": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "TodoTable",
+        "FunctionVersion": "2018-05-29",
+        "Name": "FunctionQueryBatchFetchTodo",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.batchFetchTodo.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.batchFetchTodo.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "PipelineQueryBatchResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Kind": "PIPELINE",
+        "PipelineConfig": {
+          "Functions": [
+            {
+              "Fn::GetAtt": [
+                "AddEnvVariablesToStash",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "FunctionQueryBatchFetchTodo",
+                "FunctionId"
+              ]
+            }
+          ]
+        },
+        "TypeName": "Query",
+        "FieldName": "batchFetchTodo",
+        "RequestMappingTemplate": "{}",
+        "ResponseMappingTemplate": "$util.toJson($ctx.result)"
+      },
+      "DependsOn": [
+        "AddEnvVariablesToStash",
+        "FunctionQueryBatchFetchTodo"
+      ]
+    },
+    "FunctionQueryBatchFetchTodoWithNotes": {
+      "Type": "AWS::AppSync::FunctionConfiguration",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "DataSourceName": "NoteTable",
+        "FunctionVersion": "2018-05-29",
+        "Name": "FunctionQueryBatchFetchTodoWithNotes",
+        "RequestMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.batchFetchTodoWithNotes.req.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        },
+        "ResponseMappingTemplateS3Location": {
+          "Fn::Sub": [
+            "s3://${S3DeploymentBucket}/${S3DeploymentRootKey}/resolvers/Query.batchFetchTodoWithNotes.res.vtl",
+            {
+              "S3DeploymentBucket": {
+                "Ref": "S3DeploymentBucket"
+              },
+              "S3DeploymentRootKey": {
+                "Ref": "S3DeploymentRootKey"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "PipelineQueryBatchTodoWithNotesResolver": {
+      "Type": "AWS::AppSync::Resolver",
+      "Properties": {
+        "ApiId": {
+          "Ref": "AppSyncApiId"
+        },
+        "Kind": "PIPELINE",
+        "PipelineConfig": {
+          "Functions": [
+            {
+              "Fn::GetAtt": [
+                "AddEnvVariablesToStash",
+                "FunctionId"
+              ]
+            },
+            {
+              "Fn::GetAtt": [
+                "FunctionQueryBatchFetchTodoWithNotes",
+                "FunctionId"
+              ]
+            }
+          ]
+        },
+        "TypeName": "Query",
+        "FieldName": "batchFetchTodoWithNotes",
+        "RequestMappingTemplate": "{}",
+        "ResponseMappingTemplate": "$util.toJson($ctx.result)"
+      },
+      "DependsOn": [
+        "AddEnvVariablesToStash",
+        "FunctionQueryBatchFetchTodoWithNotes"
+      ]
+    },
+    "AppsyncAccessMultipleTablesRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": [
+            "AppsyncAccessMultipleTablesRole-${env}",
+            {
+              "env": {
+                "Ref": "env"
+              }
+            }
+          ]
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "appsync.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "AppsyncAllowDynamoBatchGet",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Sid": "AppsyncAllowDynamoBatchGet",
+                  "Effect": "Allow",
+                  "Action": [
+                    "dynamodb:BatchGetItem",
+                    "dynamodb:BatchWriteItem",
+                    "dynamodb:UpdateItem",
+                    "dynamodb:PutItem",
+                    "dynamodb:DeleteItem",
+                    "dynamodb:GetItem",
+                    "dynamodb:Scan",
+                    "dynamodb:Query"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": [
+                        "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Note-${AppSyncApiId}-${env}",
+                        {
+                          "env": {
+                            "Ref": "env"
+                          },
+                          "AppSyncApiId": {
+                            "Ref": "AppSyncApiId"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "Fn::Sub": [
+                        "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Todo-${AppSyncApiId}-${env}",
+                        {
+                          "env": {
+                            "Ref": "env"
+                          },
+                          "AppSyncApiId": {
+                            "Ref": "AppSyncApiId"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "Fn::Sub": [
+                        "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Note-${AppSyncApiId}-${env}/*",
+                        {
+                          "env": {
+                            "Ref": "env"
+                          },
+                          "AppSyncApiId": {
+                            "Ref": "AppSyncApiId"
+                          }
+                        }
+                      ]
+                    },
+                    {
+                      "Fn::Sub": [
+                        "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/Todo-${AppSyncApiId}-${env}/*",
+                        {
+                          "env": {
+                            "Ref": "env"
+                          },
+                          "AppSyncApiId": {
+                            "Ref": "AppSyncApiId"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Conditions": {
+    "HasEnvironmentParameter": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "env"
+            },
+            "NONE"
+          ]
+        }
+      ]
+    },
+    "AlwaysFalse": {
+      "Fn::Equals": [
+        "true",
+        "false"
+      ]
+    }
+  },
+  "Outputs": {
+    "EmptyOutput": {
+      "Description": "An empty output. You may delete this if you have at least one resource above.",
+      "Value": ""
+    }
+  }
+}

@@ -1,0 +1,10 @@
+#if ($ctx.error)        
+    $util.appendError($util.toJson($ctx.error))
+#end
+
+#set($map = {})
+
+$util.qr($map.put("notes", $ctx.result.data["Note-${ctx.stash.apiId}-${ctx.stash.env}"]))
+$util.qr($map.put("todos", $ctx.result.data["Todo-${ctx.stash.apiId}-${ctx.stash.env}"]))
+
+$util.toJson($map)

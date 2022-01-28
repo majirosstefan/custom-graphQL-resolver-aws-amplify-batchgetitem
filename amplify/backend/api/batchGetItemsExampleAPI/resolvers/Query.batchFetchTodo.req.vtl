@@ -1,0 +1,21 @@
+#if ($ctx.error)        
+    $util.appendError($util.toJson($ctx.error))
+#end
+
+#set($ids = [])
+#foreach($id in ${ctx.args.ids})
+    #set($map = {})
+    $util.qr($map.put("id", $util.dynamodb.toString($id)))
+    $util.qr($ids.add($map))
+#end
+
+{
+    "version" : "2018-05-29",
+    "operation" : "BatchGetItem",
+    "tables" : {
+        "Todo-${ctx.stash.apiId}-${ctx.stash.env}": {
+            "keys": $util.toJson($ids),
+            "consistentRead": true
+        }
+    }
+}

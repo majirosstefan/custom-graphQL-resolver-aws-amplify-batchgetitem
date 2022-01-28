@@ -1,0 +1,6 @@
+#if ($ctx.error)        
+    $util.appendError($util.toJson($ctx.error))
+#end
+
+
+$util.toJson($ctx.result.data["Todo-${ctx.stash.apiId}-${ctx.stash.env}"])
